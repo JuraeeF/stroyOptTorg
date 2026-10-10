@@ -1,0 +1,88 @@
+### IntelliJ IDEA HTTP Client: har bir so'rovni "Run" tugmasi bilan ishga tushiring.
+
+### 1) Admin sifatida kirish (token avtomatik saqlanadi)
+POST http://localhost:8080/api/auth/login
+Content-Type: application/json
+
+{ "email": "admin@stroy.local", "password": "Admin12345!" }
+
+> {% client.global.set("adminToken", response.body.token); %}
+
+### 2) Ro'yxatdan o'tish (mijoz)
+POST http://localhost:8080/api/auth/register
+Content-Type: application/json
+
+{
+  "fullName": "Ali Valiyev",
+  "email": "ali@example.com",
+  "phone": "+998901234567",
+  "companyName": "Ali Qurilish",
+  "password": "Parol12345"
+}
+
+> {% client.global.set("userToken", response.body.token); %}
+
+### 3) Kategoriyalar
+GET http://localhost:8080/api/categories
+
+### 4) Mahsulotlar (filtr + sahifalash)
+GET http://localhost:8080/api/products?q=цемент&sort=price_asc&page=0&size=12
+
+### 5) Buyurtma berish (mijoz tokeni bilan)
+POST http://localhost:8080/api/orders
+Authorization: Bearer {{userToken}}
+Content-Type: application/json
+
+{
+  "customerName": "Ali Valiyev",
+  "phone": "+998901234567",
+  "address": "Toshkent, Chilonzor 5",
+  "comment": "Ertalab yetkazing",
+  "items": [
+    { "productId": 1, "quantity": 20 },
+    { "productId": 4, "quantity": 500 }
+  ]
+}
+
+### 6) Mening buyurtmalarim
+GET http://localhost:8080/api/orders
+Authorization: Bearer {{userToken}}
+
+### 7) Admin: yangi mahsulot
+POST http://localhost:8080/api/admin/products
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{
+  "name": "Плитка керамическая 30x30",
+  "sku": "TILE-3030",
+  "description": "Напольная плитка",
+  "price": 85000,
+  "unit": "м²",
+  "minOrderQuantity": 10,
+  "stock": 1500,
+  "imageUrl": null,
+  "categoryId": 1,
+  "active": true
+}
+
+### 8) Admin: buyurtmalar ro'yxati
+GET http://localhost:8080/api/admin/orders?status=NEW
+Authorization: Bearer {{adminToken}}
+
+### 9) Admin: buyurtma holatini o'zgartirish
+PATCH http://localhost:8080/api/admin/orders/1/status
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{ "status": "CONFIRMED" }
+
+### 10) Admin: statistika
+GET http://localhost:8080/api/admin/stats
+Authorization: Bearer {{adminToken}}
+
+### 11) Aloqa formasi (ochiq)
+POST http://localhost:8080/api/contact
+Content-Type: application/json
+
+{ "name": "Vali", "phone": "+998901112233", "message": "Narx haqida so'rayman" }
