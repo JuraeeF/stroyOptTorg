@@ -1,6 +1,4 @@
 ### IntelliJ IDEA HTTP Client: har bir so'rovni "Run" tugmasi bilan ishga tushiring.
-### Swagger UI hujjati: http://localhost:8080/swagger-ui.html
-### OpenAPI JSON: http://localhost:8080/v3/api-docs
 
 ### 1) Admin sifatida kirish (token avtomatik saqlanadi)
 POST http://localhost:8080/api/auth/login

@@ -15,6 +15,9 @@ public final class Slugs {
     }
 
     public static String slugify(String input) {
+        if (input == null || input.isBlank()) {
+            return "item";
+        }
         StringBuilder sb = new StringBuilder();
         for (char c : input.toLowerCase(Locale.ROOT).toCharArray()) {
             int idx = CYRILLIC.indexOf(c);

@@ -10,7 +10,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
-import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
@@ -30,7 +29,6 @@ import java.util.List;
 
 @Configuration
 @EnableWebSecurity
-@EnableMethodSecurity
 public class SecurityConfig {
 
     private final JwtService jwtService;
@@ -39,7 +37,7 @@ public class SecurityConfig {
 
     public SecurityConfig(JwtService jwtService,
                           UserDetailsService userDetailsService,
-                          @Value("${app.cors.allowed-origins:*}") String allowedOrigins) {
+                          @Value("${app.cors.allowed-origins}") String allowedOrigins) {
         this.jwtService = jwtService;
         this.userDetailsService = userDetailsService;
         this.allowedOrigins = allowedOrigins;
@@ -52,27 +50,13 @@ public class SecurityConfig {
                 .cors(Customizer.withDefaults())
                 .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
-                        // Frontend static assets
                         .requestMatchers("/", "/index.html", "/assets/**", "/favicon.ico").permitAll()
-                        // Swagger / OpenAPI documentation
-                        .requestMatchers(
-                                "/v3/api-docs/**",
-                                "/v3/api-docs.yaml",
-                                "/swagger-ui/**",
-                                "/swagger-ui.html",
-                                "/swagger-resources/**",
-                                "/webjars/**"
-                        ).permitAll()
-                        // Preflight requests & Error endpoint
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                         .requestMatchers("/error").permitAll()
-                        // Public API endpoints
                         .requestMatchers(HttpMethod.POST, "/api/auth/register", "/api/auth/login").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/categories/**", "/api/products/**").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/contact").permitAll()
-                        // Admin API endpoints
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")
-                        // Any other request must be authenticated
                         .anyRequest().authenticated())
                 .exceptionHandling(e -> e.authenticationEntryPoint(new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED)))
                 .addFilterBefore(new JwtAuthFilter(jwtService, userDetailsService),
@@ -97,19 +81,12 @@ public class SecurityConfig {
                 .filter(s -> !s.isEmpty())
                 .toList();
         CorsConfiguration cfg = new CorsConfiguration();
-        if (origins.contains("*") || origins.isEmpty()) {
-            cfg.addAllowedOriginPattern("*");
-        } else {
-            cfg.setAllowedOrigins(origins);
-        }
+        cfg.setAllowedOrigins(origins);
         cfg.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
-        cfg.setAllowedHeaders(List.of("*"));
-        cfg.setExposedHeaders(List.of("Authorization"));
-        cfg.setAllowCredentials(true);
+        cfg.setAllowedHeaders(List.of("Authorization", "Content-Type", "Accept"));
         cfg.setMaxAge(3600L);
-
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-        source.registerCorsConfiguration("/**", cfg);
+        source.registerCorsConfiguration("/api/**", cfg);
         return source;
     }
 }
