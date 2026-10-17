@@ -1,59 +1,91 @@
-# Stroy backend (Spring Boot 3, Java 17, PostgreSQL, JWT)
+# СтройОптТорг Backend (Java 17 Amazon Corretto, Spring Boot 3.3.5, PostgreSQL, JWT, Swagger)
 
-СтройОптТорг uchun ulgurji qurilish materiallari savdosi backendi.
+СтройОптТорг uchun ulgurji qurilish materiallari savdosi REST API backendi.
 
-## O'rnatish
+## Tizim talablari va sozlash
 
-Talablar: Java 17, Maven 3.6.3 yoki yangiroq, PostgreSQL.
+- **Java**: Java 17 (Amazon Corretto 17 tavsiya etiladi)
+- **Maven**: 3.8+ (yoki IntelliJ IDEA o'rnatilgan Maven)
+- **Ma'lumotlar bazasi**: PostgreSQL 14+
 
-1. PostgreSQL'da baza yarating:
-   ```sql
-   CREATE DATABASE stroy;
-   ```
-2. `src/main/resources/application.properties` dagi standart qiymatlar bilan ishlating yoki `DB_URL`, `DB_USERNAME`, `DB_PASSWORD` muhit o'zgaruvchilarini belgilang.
-3. Loyihani ishga tushiring:
-   ```bash
-   mvn spring-boot:run
-   ```
-4. Ishga tushadigan JAR yaratish:
-   ```bash
-   mvn clean package
-   java -jar target/stroy-backend-0.0.1-SNAPSHOT.jar
-   ```
+### 1. PostgreSQL bazasi yaratish
+```sql
+CREATE DATABASE stroy;
+```
 
-Admin (birinchi ishga tushishda): `admin@stroy.local` / `Admin12345!` — **darhol o'zgartiring** (`ADMIN_EMAIL`, `ADMIN_PASSWORD`).
-Productionda albatta `JWT_SECRET` (32+ belgi) bering. Demo ma'lumot kerak bo'lmasa `SEED_DEMO_DATA=false`.
+### 2. Sozlamalar (`application.properties`)
+Standart sozlamalar:
+- DB URL: `jdbc:postgresql://localhost:5432/stroy`
+- Username: `postgres`
+- Password: `root123`
+- Server port: `8080`
 
-## API
+### 3. Ishga tushirish
+IntelliJ IDEA orqali:
+`StroyApplication.java` faylini ochib, **Run** tugmasini bosing.
 
-| Metod | URL | Kim |
-|---|---|---|
-| POST | `/api/auth/register`, `/api/auth/login` | hamma |
-| GET | `/api/auth/me` | kirgan foydalanuvchi |
-| GET | `/api/categories`, `/api/categories/{id}` | hamma |
-| GET | `/api/products?categoryId&q&minPrice&maxPrice&inStock&sort&page&size` | hamma |
-| GET | `/api/products/{id}` | hamma |
-| POST | `/api/contact` | hamma |
-| POST | `/api/orders` | kirgan foydalanuvchi |
-| GET | `/api/orders`, `/api/orders/{id}` | egasi (admin hammasini ko'radi) |
-| POST | `/api/orders/{id}/cancel` | egasi, faqat NEW holatda |
-| POST/PUT/DELETE | `/api/admin/categories[/{id}]` | ADMIN |
-| GET/POST/PUT/DELETE | `/api/admin/products[/{id}]` | ADMIN (DELETE = sotuvdan olish) |
-| GET/PATCH | `/api/admin/orders`, `/api/admin/orders/{id}/status` | ADMIN |
-| GET/PATCH | `/api/admin/contacts`, `/api/admin/contacts/{id}/processed` | ADMIN |
-| GET | `/api/admin/stats` | ADMIN |
+Yoki terminal orqali:
+```bash
+mvn spring-boot:run
+```
 
-`sort`: `newest` (default), `price_asc`, `price_desc`, `name`. Himoyalangan so'rovlarda `Authorization: Bearer <token>` yuboriladi.
+JAR paket yaratish:
+```bash
+mvn clean package
+java -jar target/stroy-backend-0.0.1-SNAPSHOT.jar
+```
 
-Sinash uchun `requests.http` faylini IntelliJ ichida oching.
+---
 
-## Biznes qoidalari
+## 📖 Swagger / OpenAPI Hujjatlari
 
-- Ulgurji: har mahsulotda `minOrderQuantity`; buyurtmada u hisobga olinadi.
-- Buyurtma paytida ombor qoldig'i bloklanib kamayadi; bekor qilinsa qaytariladi.
-- Buyurtma holatlari: NEW → CONFIRMED → SHIPPED → DELIVERED (NEW/CONFIRMED dan CANCELLED ga o'tish mumkin).
-- Buyurtmada mahsulot nomi va narxi nusxalanadi, keyin narx o'zgarsa ham tarix buzilmaydi.
+Loyihani ishga tushirgandan so'ng brauzerda quyidagi manzilni oching:
+👉 **[http://localhost:8080/swagger-ui.html](http://localhost:8080/swagger-ui.html)**
 
-## Frontend
+OpenAPI spetsifikatsiyasi (JSON):
+👉 **[http://localhost:8080/v3/api-docs](http://localhost:8080/v3/api-docs)**
 
-Каталог, поиск, категории, корзина, вход/регистрация и оформление заказа доступны в браузере по адресу http://localhost:8080 после запуска Spring Boot. Интерфейс находится в src/main/resources/static и использует существующие /api endpoints. Для загрузки каталога должна быть запущена PostgreSQL база stroy.
+> **Swagger UI orqali avtorizatsiya**:
+> 1. `/api/auth/login` orqali tizimga kiring va tokenni oling.
+> 2. Yuqori o'ng burchakdagi **"Authorize"** tugmasini bosing.
+> 3. Token qiymatini kiriting (masalan: `eyJhbGciOi...`).
+> 4. Endi barcha himoyalangan API larni bevosita brauzerdan sinab ko'rishingiz mumkin!
+
+---
+
+## Standart Admin Ma'lumotlari
+Birinchi marta ishga tushganda avtomatik ravishda admin foydalanuvchi yaratiladi:
+- **Email**: `originalorig31@gmail.com`
+- **Parol**: `Admin12345!`
+*(Ushbu qiymatlarni `application.properties` orqali o'zgartirishingiz mumkin)*
+
+---
+
+## Asosiy REST API Endpoints
+
+| Metod | URL | Kirish ruxsati | Tavsif |
+|---|---|---|---|
+| POST | `/api/auth/register` | Ommaviy | Yangi mijozni ro'yxatdan o'tkazish |
+| POST | `/api/auth/login` | Ommaviy | Tizimga kirish (JWT token olish) |
+| GET | `/api/auth/me` | Kirgan foydalanuvchi | Joriy foydalanuvchi profili |
+| GET | `/api/categories` | Ommaviy | Barcha kategoriyalar |
+| GET | `/api/categories/{id}` | Ommaviy | Bitta kategoriya |
+| GET | `/api/products` | Ommaviy | Mahsulotlar katalogi (filtr, qidiruv, sahifalash) |
+| GET | `/api/products/{id}` | Ommaviy | Bitta mahsulot tafsiloti |
+| POST | `/api/contact` | Ommaviy | Qayta aloqa / murojaat yuborish |
+| POST | `/api/orders` | Kirgan foydalanuvchi | Yangi buyurtma berish (ombor qoldig'i band qilinadi) |
+| GET | `/api/orders` | Kirgan foydalanuvchi | Mening buyurtmalarim |
+| GET | `/api/orders/{id}` | Buyurtma egasi / Admin | Buyurtma tafsiloti |
+| POST | `/api/orders/{id}/cancel` | Buyurtma egasi | Faqat YANGI buyurtmani bekor qilish (tovar omborga qaytadi) |
+| POST/PUT/DELETE | `/api/admin/categories` | Faqat ADMIN | Kategoriyalarni boshqarish |
+| GET/POST/PUT/DELETE | `/api/admin/products` | Faqat ADMIN | Mahsulotlarni boshqarish (Soft delete) |
+| GET/PATCH | `/api/admin/orders` | Faqat ADMIN | Barcha buyurtmalar va ularning statusini yangilash |
+| GET/PATCH | `/api/admin/contacts` | Faqat ADMIN | Murojaatlar va ularni ko'rib chiqilgan deb belgilash |
+| GET | `/api/admin/stats` | Faqat ADMIN | Savdo va tizim statistikasi |
+
+---
+
+## Veb Foydalanuvchi Interfeysi (Frontend)
+Loyiha ishga tushgach, brauzerda to'g'ridan-to'g'ri:
+👉 **[http://localhost:8080](http://localhost:8080)**
+manziliga kirsangiz, tayyor savdo do'koni veb-interfeysi (katalog, savat, buyurtma berish, shaxsiy kabinet) ochiladi.

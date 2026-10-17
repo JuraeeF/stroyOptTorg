@@ -18,6 +18,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.TreeMap;
 
 @Service
@@ -34,7 +35,7 @@ public class OrderService {
     public OrderResponse create(OrderRequest req) {
         User user = currentUser.require();
 
-        // Bir xil mahsulot bir necha marta kelsa, miqdorlar qo'shiladi. TreeMap = bloklash tartibi doimiy.
+        // Bir xil mahsulot bir necha marta kelsa, miqdorlar qo'shiladi. TreeMap = bloklash tartibi doimiy (deadlock oldini oladi).
         Map<Long, Integer> quantities = new TreeMap<>();
         for (OrderItemRequest item : req.items()) {
             quantities.merge(item.productId(), item.quantity(), Integer::sum);
@@ -158,12 +159,24 @@ public class OrderService {
     /** Holatni o'zgartiradi; bekor qilinsa ombor qoldig'ini qaytaradi. */
     private void applyStatus(Order order, OrderStatus next) {
         if (next == OrderStatus.CANCELLED) {
-            List<Long> ids = order.getItems().stream().map(i -> i.getProduct().getId()).distinct().sorted().toList();
-            Map<Long, Product> locked = new TreeMap<>();
-            products.findAllForUpdate(ids).forEach(p -> locked.put(p.getId(), p));
-            for (OrderItem item : order.getItems()) {
-                Product p = locked.get(item.getProduct().getId());
-                p.setStock(p.getStock() + item.getQuantity());
+            List<Long> ids = order.getItems().stream()
+                    .map(i -> i.getProduct() != null ? i.getProduct().getId() : null)
+                    .filter(Objects::nonNull)
+                    .distinct()
+                    .sorted()
+                    .toList();
+
+            if (!ids.isEmpty()) {
+                Map<Long, Product> locked = new TreeMap<>();
+                products.findAllForUpdate(ids).forEach(p -> locked.put(p.getId(), p));
+                for (OrderItem item : order.getItems()) {
+                    if (item.getProduct() != null) {
+                        Product p = locked.get(item.getProduct().getId());
+                        if (p != null) {
+                            p.setStock(p.getStock() + item.getQuantity());
+                        }
+                    }
+                }
             }
         }
         order.setStatus(next);
