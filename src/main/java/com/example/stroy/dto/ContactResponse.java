@@ -1,6 +1,27 @@
 package com.example.stroy.dto;
 
+import io.swagger.v3.oas.annotations.media.Schema;
+
 import java.time.Instant;
 
-public record ContactResponse(Long id, String name, String phone, String message, boolean processed, Instant createdAt) {
+@Schema(description = "Aloqa xabari javobi")
+public record ContactResponse(
+        @Schema(description = "Xabar ID", example = "1")
+        Long id,
+
+        @Schema(description = "Yuboruvchi ismi", example = "Алексей")
+        String name,
+
+        @Schema(description = "Telefon", example = "+998 90 987 65 43")
+        String phone,
+
+        @Schema(description = "Xabar matni")
+        String message,
+
+        @Schema(description = "Qayta ishlanganlik holati", example = "false")
+        boolean processed,
+
+        @Schema(description = "Yuborilgan vaqti")
+        Instant createdAt
+) {
 }
