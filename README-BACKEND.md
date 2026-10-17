@@ -4,22 +4,18 @@
 
 ## O'rnatish
 
-Talablar: Java 17, Maven 3.6.3 yoki yangiroq, PostgreSQL.
+Talablar: Java 17 (Amazon Corretto 17 tavsiya etiladi), Maven 3.6.3 yoki yangiroq, PostgreSQL.
 
-1. PostgreSQL'da baza yarating:
-   ```sql
-   CREATE DATABASE stroy;
-   ```
-2. `src/main/resources/application.properties` dagi standart qiymatlar bilan ishlating yoki `DB_URL`, `DB_USERNAME`, `DB_PASSWORD` muhit o'zgaruvchilarini belgilang.
-3. Loyihani ishga tushiring:
-   ```bash
-   mvn spring-boot:run
-   ```
-4. Ishga tushadigan JAR yaratish:
-   ```bash
-   mvn clean package
-   java -jar target/stroy-backend-0.0.1-SNAPSHOT.jar
-   ```
+## Swagger / OpenAPI Hujjatlari
+
+Loyiha ishga tushgandan so'ng Swagger UI interfeysiga kiring:
+- 📖 **Swagger UI (interaktiv sinov):** [http://localhost:8080/swagger-ui.html](http://localhost:8080/swagger-ui.html)
+- 📄 **OpenAPI 3 JSON spetsifikatsiyasi:** [http://localhost:8080/v3/api-docs](http://localhost:8080/v3/api-docs)
+
+Swagger interfeysida:
+1. `/api/auth/login` yoki `/api/auth/register` orqali token oling.
+2. Sahifaning tepasidagi **Authorize** tugmasini bosing va olingan JWT tokenni kiriting.
+3. Barcha himoyalangan endpointlarni to'g'ridan-to'g'ri Swagger orqali sinab ko'ring!
 
 Admin (birinchi ishga tushishda): `admin@stroy.local` / `Admin12345!` — **darhol o'zgartiring** (`ADMIN_EMAIL`, `ADMIN_PASSWORD`).
 Productionda albatta `JWT_SECRET` (32+ belgi) bering. Demo ma'lumot kerak bo'lmasa `SEED_DEMO_DATA=false`.
