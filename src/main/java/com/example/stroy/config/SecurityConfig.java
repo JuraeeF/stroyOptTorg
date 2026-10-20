@@ -37,7 +37,7 @@ public class SecurityConfig {
 
     public SecurityConfig(JwtService jwtService,
                           UserDetailsService userDetailsService,
-                          @Value("${app.cors.allowed-origins}") String allowedOrigins) {
+                          @Value("${app.cors.allowed-origins:http://localhost:3000,http://localhost:5173,http://localhost:4200}") String allowedOrigins) {
         this.jwtService = jwtService;
         this.userDetailsService = userDetailsService;
         this.allowedOrigins = allowedOrigins;
@@ -50,17 +50,28 @@ public class SecurityConfig {
                 .cors(Customizer.withDefaults())
                 .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
+                        // Statik resurslar va sahifalar
                         .requestMatchers("/", "/index.html", "/assets/**", "/favicon.ico").permitAll()
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                         .requestMatchers("/error").permitAll()
+
+                        // Swagger UI va OpenAPI hujjatlari
+                        .requestMatchers("/swagger-ui.html", "/swagger-ui/**", "/v3/api-docs/**", "/swagger-resources/**", "/webjars/**").permitAll()
+
+                        // Ochiq API endpointlar
                         .requestMatchers(HttpMethod.POST, "/api/auth/register", "/api/auth/login").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/categories/**", "/api/products/**").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/contact").permitAll()
+
+                        // Admin API endpointlar (faqat ADMIN roli uchun)
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")
+
+                        // Boshqa barcha so'rovlar autentifikatsiya talab qiladi
                         .anyRequest().authenticated())
                 .exceptionHandling(e -> e.authenticationEntryPoint(new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED)))
                 .addFilterBefore(new JwtAuthFilter(jwtService, userDetailsService),
                         UsernamePasswordAuthenticationFilter.class);
+
         return http.build();
     }
 
@@ -81,12 +92,12 @@ public class SecurityConfig {
                 .filter(s -> !s.isEmpty())
                 .toList();
         CorsConfiguration cfg = new CorsConfiguration();
-        cfg.setAllowedOrigins(origins);
+        cfg.setAllowedOrigins(origins.isEmpty() ? List.of("*") : origins);
         cfg.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
-        cfg.setAllowedHeaders(List.of("Authorization", "Content-Type", "Accept"));
+        cfg.setAllowedHeaders(List.of("Authorization", "Content-Type", "Accept", "X-Requested-With"));
         cfg.setMaxAge(3600L);
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-        source.registerCorsConfiguration("/api/**", cfg);
+        source.registerCorsConfiguration("/**", cfg);
         return source;
     }
 }

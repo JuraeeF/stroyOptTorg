@@ -5,6 +5,8 @@ import com.example.stroy.service.CategoryService;
 import com.example.stroy.service.ProductService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -21,7 +23,7 @@ import static com.example.stroy.config.OpenApiConfig.BEARER_AUTH;
 @RequestMapping("/api/admin")
 @RequiredArgsConstructor
 @SecurityRequirement(name = BEARER_AUTH)
-@Tag(name = "6. Admin - Katalog boshqaruvi", description = "Kategoriya va mahsulotlarni qo'shish, o'zgartirish va o'chirish (Faqat ADMIN)")
+@Tag(name = "6. Admin — Katalog boshqaruvi", description = "Kategoriya va mahsulotlarni qo'shish, o'zgartirish va o'chirish (Faqat ADMIN)")
 public class AdminCatalogController {
 
     private final CategoryService categoryService;
@@ -29,33 +31,50 @@ public class AdminCatalogController {
 
     // ---- categories ----
 
+    @Operation(summary = "Yangi kategoriya yaratish", description = "Admin tomonidan yangi mahsulot toifasi qo'shiladi")
+    @ApiResponses({
+            @ApiResponse(responseCode = "201", description = "Kategoriya muvaffaqiyatli yaratildi"),
+            @ApiResponse(responseCode = "400", description = "Validatsiya xatosi"),
+            @ApiResponse(responseCode = "403", description = "Ruxsat yo'q (faqat ADMIN)")
+    })
     @PostMapping("/categories")
     @ResponseStatus(HttpStatus.CREATED)
-    @Operation(summary = "Yangi kategoriya yaratish")
     public CategoryResponse createCategory(@Valid @RequestBody CategoryRequest request) {
         return categoryService.create(request);
     }
 
+    @Operation(summary = "Kategoriyani tahrirlash", description = "Mavjud kategoriya nomini, tavsifini yoki rasmini yangilash")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Kategoriya yangilandi"),
+            @ApiResponse(responseCode = "404", description = "Kategoriya topilmadi")
+    })
     @PutMapping("/categories/{id}")
-    @Operation(summary = "Kategoriyani tahrirlash")
-    public CategoryResponse updateCategory(@PathVariable Long id, @Valid @RequestBody CategoryRequest request) {
+    public CategoryResponse updateCategory(
+            @Parameter(description = "Kategoriya ID raqami") @PathVariable Long id,
+            @Valid @RequestBody CategoryRequest request) {
         return categoryService.update(id, request);
     }
 
+    @Operation(summary = "Kategoriyani o'chirish", description = "Kategoriyani butunlay o'chirish (agar unda mahsulotlar bo'lsa xatolik beradi)")
+    @ApiResponses({
+            @ApiResponse(responseCode = "204", description = "Kategoriya muvaffaqiyatli o'chirildi"),
+            @ApiResponse(responseCode = "400", description = "Kategoriyada mahsulotlar mavjud, o'chirib bo'lmaydi"),
+            @ApiResponse(responseCode = "404", description = "Kategoriya topilmadi")
+    })
     @DeleteMapping("/categories/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    @Operation(summary = "Kategoriyani o'chirish", description = "Agar kategoriyada mahsulotlar bo'lsa, xatolik qaytaradi")
-    public void deleteCategory(@PathVariable Long id) {
+    public void deleteCategory(@Parameter(description = "Kategoriya ID raqami") @PathVariable Long id) {
         categoryService.delete(id);
     }
 
     // ---- products ----
 
+    @Operation(summary = "Barcha mahsulotlar (nofaol mahsulotlar bilan birga)", description = "Admin uchun to'liq ro'yxat, hatto sotuvdan olingan (nofaol) mahsulotlar ham ko'rinadi")
+    @ApiResponse(responseCode = "200", description = "Sahifalangan mahsulotlar ro'yxati")
     @GetMapping("/products")
-    @Operation(summary = "Barcha mahsulotlar (nofaol mahsulotlar ham ko'rinadi)")
     public PageResponse<ProductResponse> listProducts(
             @Parameter(description = "Kategoriya ID si") @RequestParam(required = false) Long categoryId,
-            @Parameter(description = "Qidiruv matni") @RequestParam(required = false) String q,
+            @Parameter(description = "Qidiruv so'zi") @RequestParam(required = false) String q,
             @Parameter(description = "Minimal narx") @RequestParam(required = false) BigDecimal minPrice,
             @Parameter(description = "Maksimal narx") @RequestParam(required = false) BigDecimal maxPrice,
             @Parameter(description = "Saralash: newest | price_asc | price_desc | name") @RequestParam(defaultValue = "newest") String sort,
@@ -65,23 +84,38 @@ public class AdminCatalogController {
         return productService.search(filter, sort, page, size);
     }
 
+    @Operation(summary = "Yangi mahsulot yaratish", description = "Katalogga yangi tovar qo'shadi (artikul, narx, o'lchov birligi, minimal buyurtma va qoldiq)")
+    @ApiResponses({
+            @ApiResponse(responseCode = "201", description = "Mahsulot yaratildi"),
+            @ApiResponse(responseCode = "400", description = "Validatsiya xatosi"),
+            @ApiResponse(responseCode = "404", description = "Ko'rsatilgan kategoriya topilmadi")
+    })
     @PostMapping("/products")
     @ResponseStatus(HttpStatus.CREATED)
-    @Operation(summary = "Yangi mahsulot yaratish")
     public ProductResponse createProduct(@Valid @RequestBody ProductRequest request) {
         return productService.create(request);
     }
 
+    @Operation(summary = "Mahsulotni tahrirlash", description = "Mavjud tovar ma'lumotlarini (narx, qoldiq, tavsif, rasm) yangilash")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Mahsulot yangilandi"),
+            @ApiResponse(responseCode = "404", description = "Mahsulot topilmadi")
+    })
     @PutMapping("/products/{id}")
-    @Operation(summary = "Mahsulotni tahrirlash")
-    public ProductResponse updateProduct(@PathVariable Long id, @Valid @RequestBody ProductRequest request) {
+    public ProductResponse updateProduct(
+            @Parameter(description = "Mahsulot ID raqami") @PathVariable Long id,
+            @Valid @RequestBody ProductRequest request) {
         return productService.update(id, request);
     }
 
+    @Operation(summary = "Mahsulotni sotuvdan olish (Soft delete)", description = "Buyurtmalar tarixi saqlanishi uchun mahsulot bazadan butunlay o'chirilmaydi, balki active=false qilinadi")
+    @ApiResponses({
+            @ApiResponse(responseCode = "204", description = "Mahsulot nofaol holatga o'tkazildi"),
+            @ApiResponse(responseCode = "404", description = "Mahsulot topilmadi")
+    })
     @DeleteMapping("/products/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    @Operation(summary = "Mahsulotni nofaol qilish (Soft delete)", description = "Buyurtmalar tarixi saqlanishi uchun mahsulot o'chirilmaydi, faqat nofaol qilinadi")
-    public void deactivateProduct(@PathVariable Long id) {
+    public void deactivateProduct(@Parameter(description = "Mahsulot ID raqami") @PathVariable Long id) {
         productService.deactivate(id);
     }
 }

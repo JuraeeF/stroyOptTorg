@@ -1,62 +1,144 @@
-### IntelliJ IDEA HTTP Client: har bir so'rovni "Run" tugmasi bilan ishga tushiring.
+### ===================================================================
+### СтройОптТорг — REST API So'rovlar to'plami (IntelliJ HTTP Client)
+### Swagger UI brauzerda: http://localhost:8080/swagger-ui.html
+### OpenAPI 3 JSON spetsifikatsiyasi: http://localhost:8080/v3/api-docs
+### ===================================================================
 
-### 1) Admin sifatida kirish (token avtomatik saqlanadi)
+### 0) OpenAPI 3 spetsifikatsiyasi (JSON)
+GET http://localhost:8080/v3/api-docs
+
+### -------------------------------------------------------------------
+### 1. AUTENTIFIKATSIYA
+### -------------------------------------------------------------------
+
+### 1.1) Admin sifatida kirish (token avtomatik saqlanadi)
 POST http://localhost:8080/api/auth/login
 Content-Type: application/json
 
-{ "email": "admin@stroy.local", "password": "Admin12345!" }
+{
+  "email": "admin@stroy.local",
+  "password": "Admin12345!"
+}
 
 > {% client.global.set("adminToken", response.body.token); %}
 
-### 2) Ro'yxatdan o'tish (mijoz)
+### 1.2) Yangi mijoz ro'yxatdan o'tishi
 POST http://localhost:8080/api/auth/register
 Content-Type: application/json
 
 {
-  "fullName": "Ali Valiyev",
-  "email": "ali@example.com",
+  "fullName": "Jasur Abdullayev",
+  "email": "jasur@stroy.local",
   "phone": "+998901234567",
-  "companyName": "Ali Qurilish",
-  "password": "Parol12345"
+  "companyName": "Jasur Qurilish Servis MCHJ",
+  "password": "Parol12345!"
 }
 
 > {% client.global.set("userToken", response.body.token); %}
 
-### 3) Kategoriyalar
+### 1.3) Mijoz sifatida kirish
+POST http://localhost:8080/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "jasur@stroy.local",
+  "password": "Parol12345!"
+}
+
+> {% client.global.set("userToken", response.body.token); %}
+
+### 1.4) Joriy foydalanuvchi ma'lumotlari (profil)
+GET http://localhost:8080/api/auth/me
+Authorization: Bearer {{userToken}}
+
+### -------------------------------------------------------------------
+### 2. KATEGORIYALAR
+### -------------------------------------------------------------------
+
+### 2.1) Barcha kategoriyalar ro'yxati
 GET http://localhost:8080/api/categories
 
-### 4) Mahsulotlar (filtr + sahifalash)
+### 2.2) Bitta kategoriyani ID bo'yicha olish
+GET http://localhost:8080/api/categories/1
+
+### -------------------------------------------------------------------
+### 3. MAHSULOTLAR
+### -------------------------------------------------------------------
+
+### 3.1) Mahsulotlar katalogi (qidiruv, filtr, saralash)
 GET http://localhost:8080/api/products?q=цемент&sort=price_asc&page=0&size=12
 
-### 5) Buyurtma berish (mijoz tokeni bilan)
+### 3.2) Kategoriya bo'yicha filtrlash
+GET http://localhost:8080/api/products?categoryId=1&sort=newest&page=0&size=10
+
+### 3.3) Mahsulot tafsilotlari
+GET http://localhost:8080/api/products/1
+
+### -------------------------------------------------------------------
+### 4. BUYURTMALAR (Mijoz)
+### -------------------------------------------------------------------
+
+### 4.1) Yangi buyurtma berish (mijoz tokeni bilan)
 POST http://localhost:8080/api/orders
 Authorization: Bearer {{userToken}}
 Content-Type: application/json
 
 {
-  "customerName": "Ali Valiyev",
+  "customerName": "Jasur Abdullayev",
   "phone": "+998901234567",
-  "address": "Toshkent, Chilonzor 5",
-  "comment": "Ertalab yetkazing",
+  "address": "Toshkent shahri, Yunusobod tumani, 12-mavze",
+  "comment": "Ob'ektga soat 10:00 gacha yetkazib berilsin, kran bor",
   "items": [
     { "productId": 1, "quantity": 20 },
-    { "productId": 4, "quantity": 500 }
+    { "productId": 5, "quantity": 1000 }
   ]
 }
 
-### 6) Mening buyurtmalarim
-GET http://localhost:8080/api/orders
+### 4.2) Mening buyurtmalarim ro'yxati
+GET http://localhost:8080/api/orders?page=0&size=10
 Authorization: Bearer {{userToken}}
 
-### 7) Admin: yangi mahsulot
+### 4.3) Buyurtmani bekor qilish
+POST http://localhost:8080/api/orders/1/cancel
+Authorization: Bearer {{userToken}}
+
+### -------------------------------------------------------------------
+### 5. ALOQA (Bog'lanish xabari)
+### -------------------------------------------------------------------
+
+### 5.1) Saytdan xabar yuborish
+POST http://localhost:8080/api/contact
+Content-Type: application/json
+
+{
+  "name": "Rustam",
+  "phone": "+998909876543",
+  "message": "Assalomu alaykum, 50 tonna armatura uchun chegirma bormi?"
+}
+
+### -------------------------------------------------------------------
+### 6. ADMIN — KATALOG BOSHQARUVI
+### -------------------------------------------------------------------
+
+### 6.1) Admin: Yangi kategoriya yaratish
+POST http://localhost:8080/api/admin/categories
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{
+  "name": "Yog'och va taxta materiallari",
+  "description": "Brus, taxta, fanera va OSB plitalar"
+}
+
+### 6.2) Admin: Yangi mahsulot qo'shish
 POST http://localhost:8080/api/admin/products
 Authorization: Bearer {{adminToken}}
 Content-Type: application/json
 
 {
-  "name": "Плитка керамическая 30x30",
-  "sku": "TILE-3030",
-  "description": "Напольная плитка",
+  "name": "Kafel 30x30 sm Keramin",
+  "sku": "TILE-KER-3030",
+  "description": "Pol uchun mustahkam keramika kafel",
   "price": 85000,
   "unit": "м²",
   "minOrderQuantity": 10,
@@ -66,23 +148,57 @@ Content-Type: application/json
   "active": true
 }
 
-### 8) Admin: buyurtmalar ro'yxati
-GET http://localhost:8080/api/admin/orders?status=NEW
+### 6.3) Admin: Mahsulotni tahrirlash
+PUT http://localhost:8080/api/admin/products/1
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{
+  "name": "Цемент М400 (50 кг) Yangilangan",
+  "sku": "CEM-M400-50",
+  "description": "Yuqori sifatli portlandsement",
+  "price": 63000,
+  "unit": "мешок",
+  "minOrderQuantity": 20,
+  "stock": 4800,
+  "imageUrl": null,
+  "categoryId": 1,
+  "active": true
+}
+
+### 6.4) Admin: Mahsulotni sotuvdan olish (Soft delete)
+DELETE http://localhost:8080/api/admin/products/1
 Authorization: Bearer {{adminToken}}
 
-### 9) Admin: buyurtma holatini o'zgartirish
+### -------------------------------------------------------------------
+### 7. ADMIN — BUYURTMALAR VA STATISTIKA
+### -------------------------------------------------------------------
+
+### 7.1) Admin: Barcha buyurtmalar ro'yxati
+GET http://localhost:8080/api/admin/orders?status=NEW&page=0&size=20
+Authorization: Bearer {{adminToken}}
+
+### 7.2) Admin: Buyurtma holatini yangilash (CONFIRMED -> SHIPPED -> DELIVERED)
 PATCH http://localhost:8080/api/admin/orders/1/status
 Authorization: Bearer {{adminToken}}
 Content-Type: application/json
 
-{ "status": "CONFIRMED" }
+{
+  "status": "CONFIRMED"
+}
 
-### 10) Admin: statistika
+### 7.3) Admin: Boshqaruv paneli statistikasi
 GET http://localhost:8080/api/admin/stats
 Authorization: Bearer {{adminToken}}
 
-### 11) Aloqa formasi (ochiq)
-POST http://localhost:8080/api/contact
-Content-Type: application/json
+### -------------------------------------------------------------------
+### 8. ADMIN — ALOQA XABARLARI
+### -------------------------------------------------------------------
 
-{ "name": "Vali", "phone": "+998901112233", "message": "Narx haqida so'rayman" }
+### 8.1) Admin: Xabarlar ro'yxati
+GET http://localhost:8080/api/admin/contacts?page=0&size=20
+Authorization: Bearer {{adminToken}}
+
+### 8.2) Admin: Xabarni qayta ishlangan deb belgilash
+PATCH http://localhost:8080/api/admin/contacts/1/processed?value=true
+Authorization: Bearer {{adminToken}}
